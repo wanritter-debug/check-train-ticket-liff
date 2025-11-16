@@ -223,17 +223,31 @@
                 </div>
             </div>
             <div class="section">
-                <div class="section-title">🎫 ประเภทที่นั่ง</div>
-                <div class="input-group">
-                    <select id="seatClass">
-                        <option value="นั่งชั้น 3">นั่งชั้น 3 (ไม่มีเครื่องปรับอากาศ)</option>
-                        <option value="นั่งชั้น 2">นั่งชั้น 2 (มีเครื่องปรับอากาศ)</option>
-                        <option value="นอนชั้น 2 เตียงบน">นอนชั้น 2 เตียงบน</option>
-                        <option value="นอนชั้น 2 เตียงล่าง">นอนชั้น 2 เตียงล่าง</option>
-                        <option value="นอนชั้น 1">นอนชั้น 1 (ห้องส่วนตัว)</option>
-                    </select>
-                </div>
-            </div>
+    <div class="section-title">🎫 ประเภทที่นั่ง</div>
+    <div class="input-group">
+        <select id="seatClass">
+            <optgroup label="ชั้น 1 ปรับอากาศ">
+                <option value="ชั้น 1 ปรับอากาศ - เตียงบน">เตียงบน</option>
+                <option value="ชั้น 1 ปรับอากาศ - เตียงล่าง">เตียงล่าง</option>
+                <option value="ชั้น 1 ปรับอากาศ - เหมาห้อง">เหมาห้อง</option>
+            </optgroup>
+            <optgroup label="ชั้น 2 นอนปรับอากาศ">
+                <option value="ชั้น 2 นอนปรับอากาศ - เตียงบน">เตียงบน</option>
+                <option value="ชั้น 2 นอนปรับอากาศ - เตียงล่าง">เตียงล่าง</option>
+            </optgroup>
+            <optgroup label="ชั้น 2 นอนพัดลม">
+                <option value="ชั้น 2 นอนพัดลม - เตียงบน">เตียงบน</option>
+                <option value="ชั้น 2 นอนพัดลม - เตียงล่าง">เตียงล่าง</option>
+            </optgroup>
+            <optgroup label="ชั้น 2 นั่ง">
+                <option value="ชั้น 2 นั่งพัดลม">ชั้น 2 นั่งพัดลม</option>
+            </optgroup>
+            <optgroup label="ชั้น 3">
+                <option value="ชั้น 3 นั่งพัดลม">ชั้น 3 นั่งพัดลม</option>
+            </optgroup>
+        </select>
+    </div>
+</div>
             <div class="section">
                 <div class="section-title">📞 ข้อมูลติดต่อ</div>
                 <div class="input-group" id="phoneGroup">
