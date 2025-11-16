@@ -9,7 +9,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
-            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); 
+            background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); 
             min-height: 100vh; 
             display: flex;
             align-items: center;
@@ -24,7 +24,7 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             margin: auto;
         }
-        .header { background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 20px 20px 0 0; }
+        .header { background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 20px 20px 0 0; }
         .company-logo { 
             width: 80px; 
             height: 80px; 
@@ -159,13 +159,13 @@
                 <div class="company-logo-text">AH&T</div>
             </div>
             <h1>Al Hijrah & Travel</h1>
-            <p>จองตั๋วรถไฟ บริการจองตั๋วรถไฟทั่วประเทศไทย 🚆</p>
-            <p class="subtitle">บริการจองตั๋วรถไฟอย่างมืออาชีพ</p>
+            <p>เช็คราคาและจองตั๋วรถไฟ เป็นที่ปรึกษาให้คุณ 😊</p>
+            <p class="subtitle">บริการจองตั๋วรถไฟทุกสายในประเทศ<br>Authorized Agent for the State Railway of Thailand (SRT)</p>
             <div class="train-badge">
                 <svg viewBox="0 0 24 24">
                     <path d="M12 2c-4 0-8 .5-8 4v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h2l2-2h4l2 2h2v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-4-4-8-4zM7.5 17c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm3.5-7H6V6h5v4zm5.5 7c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-7h-5V6h5v4z"/>
                 </svg>
-                <span>ตัวแทนจำหน่ายตั๋วรถไฟอย่างเป็นทางการ</span>
+                <span>ตัวแทนจำหน่ายรถไฟอย่างเป็นทางการรับรองโดยการรถไฟแห่งประเทศไทย</span>
             </div>
             <div class="user-info" id="userInfo" style="display: none;">
                 <img id="userPicture" src="" alt="Profile">
@@ -184,17 +184,41 @@
                 <div class="section-title">🚉 เส้นทางการเดินทาง</div>
                 <div class="location-inputs">
                     <div class="input-group" id="fromGroup">
-                        <label>ต้นทาง</label>
-                        <input type="text" id="from" placeholder="กรุงเทพ, เชียงใหม่, หาดใหญ่">
-                        <small class="error">กรุณากรอกต้นทาง</small>
+                        <label>สถานีต้นทาง</label>
+                        <select id="from">
+                            <option value="">เลือกสถานีต้นทาง</option>
+                            <option value="กรุงเทพ (หัวลำโพง)">กรุงเทพ (หัวลำโพง)</option>
+                            <option value="เชียงใหม่">เชียงใหม่</option>
+                            <option value="หาดใหญ่">หาดใหญ่</option>
+                            <option value="นครราชสีมา">นครราชสีมา</option>
+                            <option value="อุบลราชธานี">อุบลราชธานี</option>
+                            <option value="อุดรธานี">อุดรธานี</option>
+                            <option value="สุราษฎร์ธานี">สุราษฎร์ธานี</option>
+                            <option value="พิษณุโลก">พิษณุโลก</option>
+                            <option value="ขอนแก่น">ขอนแก่น</option>
+                            <option value="นครสวรรค์">นครสวรรค์</option>
+                        </select>
+                        <small class="error">กรุณาเลือกสถานีต้นทาง</small>
                     </div>
                     <button class="swap-btn" type="button" id="swapBtn">
                         <svg viewBox="0 0 24 24"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg>
                     </button>
                     <div class="input-group" id="toGroup">
-                        <label>ปลายทาง</label>
-                        <input type="text" id="to" placeholder="กรุงเทพ, เชียงใหม่, หาดใหญ่">
-                        <small class="error">กรุณากรอกปลายทาง</small>
+                        <label>สถานีปลายทาง</label>
+                        <select id="to">
+                            <option value="">เลือกสถานีปลายทาง</option>
+                            <option value="กรุงเทพ (หัวลำโพง)">กรุงเทพ (หัวลำโพง)</option>
+                            <option value="เชียงใหม่">เชียงใหม่</option>
+                            <option value="หาดใหญ่">หาดใหญ่</option>
+                            <option value="นครราชสีมา">นครราชสีมา</option>
+                            <option value="อุบลราชธานี">อุบลราชธานี</option>
+                            <option value="อุดรธานี">อุดรธานี</option>
+                            <option value="สุราษฎร์ธานี">สุราษฎร์ธานี</option>
+                            <option value="พิษณุโลก">พิษณุโลก</option>
+                            <option value="ขอนแก่น">ขอนแก่น</option>
+                            <option value="นครสวรรค์">นครสวรรค์</option>
+                        </select>
+                        <small class="error">กรุณาเลือกสถานีปลายทาง</small>
                     </div>
                 </div>
             </div>
@@ -459,17 +483,17 @@
             let hasError = false;
             
             if (!from) {
-                showError('fromGroup', 'กรุณากรอกต้นทาง');
+                showError('fromGroup', 'กรุณาเลือกสถานีต้นทาง');
                 hasError = true;
             }
             
             if (!to) {
-                showError('toGroup', 'กรุณากรอกปลายทาง');
+                showError('toGroup', 'กรุณาเลือกสถานีปลายทาง');
                 hasError = true;
             }
             
             if (from && to && from === to) {
-                showError('toGroup', 'ต้นทางและปลายทางต้องไม่เหมือนกัน');
+                showError('toGroup', 'สถานีต้นทางและปลายทางต้องไม่เหมือนกัน');
                 hasError = true;
             }
             
@@ -543,9 +567,9 @@
                 try {
                     showDebug('กำลังส่งข้อความไปยัง LINE Chat...');
                     
-                    let msg = `✅ รับคำขอเช็คราคาตั๋วรถไฟเรียบร้อยแล้วค่ะ\n━━━━━━━━━━━━━━━━\n📋 หมายเลขคำขอ: ${reqNum}\n\n🔷 ประเภทเที่ยวรถ: ${tripType}`;
+                    let msg = `✅ รับคำขอจองตั๋วรถไฟเรียบร้อยแล้วค่ะ\n━━━━━━━━━━━━━━━━\n📋 หมายเลขคำขอ: ${reqNum}\n\n🔷 ประเภทเที่ยวรถ: ${tripType}`;
                     
-                    msg += `\n\n🚉 เส้นทางการเดินทาง:\nต้นทาง: ${from}\nปลายทาง: ${to}`;
+                    msg += `\n\n🚉 เส้นทางการเดินทาง:\nสถานีต้นทาง: ${from}\nสถานีปลายทาง: ${to}`;
                     
                     msg += `\n\n📅 วันที่เดินทาง:\nวันเดินทางไป: ${departDate}`;
                     if (tripType === 'ไป-กลับ') {
@@ -572,7 +596,7 @@
                     }]);
                     
                     showDebug('✅ ส่งข้อความ LINE สำเร็จ');
-                    showMessage('success', `✅ ส่งคำขอสำเร็จ! หมายเลข: ${reqNum}`);
+                    showMessage('success', `✅ จองตั๋วสำเร็จ! หมายเลข: ${reqNum}`);
                     
                     setTimeout(() => {
                         if (liff.isInClient()) {
