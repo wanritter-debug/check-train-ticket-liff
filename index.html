@@ -145,6 +145,75 @@
             .swap-btn:hover { transform: rotate(270deg); } 
             .date-inputs { flex-direction: column; } 
         }
+        .message-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.8);
+            z-index: 10001;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .message-popup.active {
+            display: flex !important;
+        }
+        .message-box {
+            background: white;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 0;
+        }
+        .message-header {
+            background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            text-align: center;
+        }
+        .message-content {
+            padding: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin: 20px;
+        }
+        .message-buttons {
+            padding: 0 20px 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .copy-btn, .close-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .copy-btn {
+            background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+            color: white;
+        }
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.4);
+        }
+        .close-btn {
+            background: #f5f5f5;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -277,282 +346,256 @@
         </div>
     </div>
     <script>
-        const CONFIG = {
-            GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyTpjQBMHPY9BrT4Zp-N_If-tBXT5AdnW-VhhxfsMBIU4zKfrbyMSU97xmR09BGaR4aQw/exec',
-            LIFF_ID: '2008429094-7ryam0w9'
-        };
-        
-        let userProfile = null;
-        let isLiffReady = false;
-        
-        function showDebug(message) {
-            const debugEl = document.getElementById('debugInfo');
-            debugEl.textContent = message;
-            debugEl.style.display = 'block';
-            console.log('DEBUG:', message);
-        }
-        
-        function showMessage(type, message) {
-            const el = document.getElementById(type === 'success' ? 'successMessage' : 'errorMessage');
-            el.textContent = message;
-            el.style.display = 'block';
-            setTimeout(() => el.style.display = 'none', 5000);
-        }
-        
-        function showLoading(show) {
-            document.getElementById('loadingOverlay').classList.toggle('active', show);
-            document.getElementById('submitBtn').disabled = show;
-        }
-        
-        function showError(groupId, message) {
-            const el = document.getElementById(groupId);
-            if (el) {
-                el.classList.add('has-error');
-                const errorEl = el.querySelector('.error');
-                if (errorEl && message) errorEl.textContent = message;
-            }
-        }
-        
-        function clearError(groupId) {
-            const el = document.getElementById(groupId);
-            if (el) el.classList.remove('has-error');
-        }
-        
-        function getTodayDate() {
-            const d = new Date();
-            return d.toISOString().split('T')[0];
-        }
-        
-        function formatDateThai(dateStr) {
-            if (!dateStr) return '';
-            const parts = dateStr.split('-');
-            const year = parseInt(parts[0]) + 543;
-            return `${parts[2]}/${parts[1]}/${year}`;
-        }
-        
-        function validatePhone(phone) {
-            if (!phone) return true;
-            return /^0[0-9]{8,9}$/.test(phone.replace(/[-\s]/g, ''));
-        }
-        
-        function handleLogoError(img) {
-            console.log('❌ Logo load failed:', img.src);
-            const alternatives = [
-                'https://cdn.jsdelivr.net/gh/wanritter-debug/al-hijrah-assets@main/logo.png',
-                'https://raw.githubusercontent.com/wanritter-debug/al-hijrah-assets/refs/heads/main/logo.png'
-            ];
-            
-            const currentIndex = alternatives.indexOf(img.src);
-            const nextIndex = currentIndex + 1;
-            
-            if (nextIndex < alternatives.length && !img.dataset.finalFail) {
-                console.log('🔄 Trying alternative:', alternatives[nextIndex]);
-                img.src = alternatives[nextIndex];
-                if (nextIndex === alternatives.length - 1) {
-                    img.dataset.finalFail = 'true';
-                }
-            } else {
-                console.log('💬 Using text fallback: AH&T');
-                img.style.display = 'none';
-                img.nextElementSibling.style.display = 'block';
-            }
-        }
-        
-        const departPicker = document.getElementById('departDatePicker');
-        const returnPicker = document.getElementById('returnDatePicker');
-        const today = getTodayDate();
-        
-        departPicker.min = today;
-        returnPicker.min = today;
-        departPicker.value = today;
-        
-        departPicker.addEventListener('click', () => clearError('departGroup'));
-        returnPicker.addEventListener('click', () => {
-            if (!returnPicker.disabled) clearError('returnGroup');
-        });
-        
-        departPicker.addEventListener('change', () => {
-            returnPicker.min = departPicker.value;
-            clearError('departGroup');
-        });
-        
-        returnPicker.addEventListener('change', () => clearError('returnGroup'));
-        
-        document.querySelectorAll('input[name="trip"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                if (this.value === 'เที่ยวเดียว') {
-                    returnPicker.disabled = true;
-                    returnPicker.value = '';
-                    document.getElementById('returnGroup').style.opacity = '0.5';
-                    clearError('returnGroup');
-                } else {
-                    returnPicker.disabled = false;
-                    document.getElementById('returnGroup').style.opacity = '1';
-                }
-            });
-        });
-        
-        window.addEventListener('load', async () => {
-            let retries = 0;
-            const maxRetries = 10;
-            
-            const waitForLiff = () => {
-                return new Promise((resolve, reject) => {
-                    const checkLiff = setInterval(() => {
-                        retries++;
-                        if (typeof liff !== 'undefined') {
-                            clearInterval(checkLiff);
-                            resolve(true);
-                        } else if (retries >= maxRetries) {
-                            clearInterval(checkLiff);
-                            reject(new Error('LIFF SDK failed to load'));
-                        }
-                    }, 300);
-                });
+            const CONFIG = {
+                LIFF_ID: '2008429094-7ryam0w9'
             };
             
-            try {
-                showDebug('รอ LIFF SDK โหลด...');
-                await waitForLiff();
-                showDebug('✅ LIFF SDK โหลดสำเร็จ');
-            } catch (error) {
-                showDebug('❌ LIFF SDK ไม่พร้อมใช้งาน - กรุณาเปิดไฟล์บน HTTPS Server');
-                showMessage('error', '⚠️ กรุณาอัปโหลดไฟล์ขึ้น Web Server (ต้องใช้ HTTPS)');
-                return;
+            let userProfile = null;
+            let isLiffReady = false;
+            
+            function showDebug(message) {
+                const debugEl = document.getElementById('debugInfo');
+                debugEl.textContent = message;
+                debugEl.style.display = 'block';
+                console.log('DEBUG:', message);
             }
             
-            try {
-                showDebug('กำลังเริ่มต้น LIFF...');
-                await liff.init({ liffId: CONFIG.LIFF_ID });
-                showDebug('✅ LIFF เริ่มต้นสำเร็จ');
+            function showMessage(type, message) {
+                const el = document.getElementById(type === 'success' ? 'successMessage' : 'errorMessage');
+                el.textContent = message;
+                el.style.display = 'block';
+                setTimeout(() => el.style.display = 'none', 5000);
+            }
+            
+            function showLoading(show) {
+                document.getElementById('loadingOverlay').classList.toggle('active', show);
+                document.getElementById('submitBtn').disabled = show;
+            }
+            
+            function showError(groupId, message) {
+                const el = document.getElementById(groupId);
+                if (el) {
+                    el.classList.add('has-error');
+                    const errorEl = el.querySelector('.error');
+                    if (errorEl && message) errorEl.textContent = message;
+                }
+            }
+            
+            function clearError(groupId) {
+                const el = document.getElementById(groupId);
+                if (el) el.classList.remove('has-error');
+            }
+            
+            function getTodayDate() {
+                const d = new Date();
+                return d.toISOString().split('T')[0];
+            }
+            
+            function formatDateThai(dateStr) {
+                if (!dateStr) return '';
+                const parts = dateStr.split('-');
+                const year = parseInt(parts[0]) + 543;
+                return `${parts[2]}/${parts[1]}/${year}`;
+            }
+            
+            function validatePhone(phone) {
+                if (!phone) return false;
+                return /^0[0-9]{8,9}$/.test(phone.replace(/[-\s]/g, ''));
+            }
+            
+            function handleLogoError(img) {
+                console.log('❌ Logo load failed:', img.src);
+                const alternatives = [
+                    'https://cdn.jsdelivr.net/gh/wanritter-debug/al-hijrah-assets@main/logo.png',
+                    'https://raw.githubusercontent.com/wanritter-debug/al-hijrah-assets/refs/heads/main/logo.png'
+                ];
                 
-                if (!liff.isInClient()) {
-                    showDebug('⚠️ กรุณาเปิดในแอพ LINE');
-                    showMessage('error', '⚠️ กรุณาเปิดในแอพ LINE เพื่อใช้งาน');
+                const currentIndex = alternatives.indexOf(img.src);
+                const nextIndex = currentIndex + 1;
+                
+                if (nextIndex < alternatives.length && !img.dataset.finalFail) {
+                    console.log('🔄 Trying alternative:', alternatives[nextIndex]);
+                    img.src = alternatives[nextIndex];
+                    if (nextIndex === alternatives.length - 1) {
+                        img.dataset.finalFail = 'true';
+                    }
+                } else {
+                    console.log('💬 Using text fallback: AH&T');
+                    img.style.display = 'none';
+                    img.nextElementSibling.style.display = 'block';
+                }
+            }
+            
+            const departPicker = document.getElementById('departDatePicker');
+            const returnPicker = document.getElementById('returnDatePicker');
+            const today = getTodayDate();
+            
+            departPicker.min = today;
+            returnPicker.min = today;
+            departPicker.value = today;
+            
+            departPicker.addEventListener('click', () => clearError('departGroup'));
+            returnPicker.addEventListener('click', () => {
+                if (!returnPicker.disabled) clearError('returnGroup');
+            });
+            
+            departPicker.addEventListener('change', () => {
+                returnPicker.min = departPicker.value;
+                clearError('departGroup');
+            });
+            
+            returnPicker.addEventListener('change', () => clearError('returnGroup'));
+            
+            document.querySelectorAll('input[name="trip"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'เที่ยวเดียว') {
+                        returnPicker.disabled = true;
+                        returnPicker.value = '';
+                        document.getElementById('returnGroup').style.opacity = '0.5';
+                        clearError('returnGroup');
+                    } else {
+                        returnPicker.disabled = false;
+                        document.getElementById('returnGroup').style.opacity = '1';
+                    }
+                });
+            });
+            
+            window.addEventListener('load', async () => {
+                let retries = 0;
+                const maxRetries = 10;
+                
+                const waitForLiff = () => {
+                    return new Promise((resolve, reject) => {
+                        const checkLiff = setInterval(() => {
+                            retries++;
+                            if (typeof liff !== 'undefined') {
+                                clearInterval(checkLiff);
+                                resolve(true);
+                            } else if (retries >= maxRetries) {
+                                clearInterval(checkLiff);
+                                reject(new Error('LIFF SDK failed to load'));
+                            }
+                        }, 300);
+                    });
+                };
+                
+                try {
+                    showDebug('รอ LIFF SDK โหลด...');
+                    await waitForLiff();
+                    showDebug('✅ LIFF SDK โหลดสำเร็จ');
+                } catch (error) {
+                    showDebug('❌ LIFF SDK ไม่พร้อมใช้งาน - กรุณาเปิดไฟล์บน HTTPS Server');
+                    showMessage('error', '⚠️ กรุณาอัปโหลดไฟล์ขึ้น Web Server (ต้องใช้ HTTPS)');
                     return;
                 }
                 
-                isLiffReady = true;
-                showDebug('✅ เปิดใน LINE App แล้ว');
+                try {
+                    showDebug('กำลังเริ่มต้น LIFF...');
+                    await liff.init({ liffId: CONFIG.LIFF_ID });
+                    showDebug('✅ LIFF เริ่มต้นสำเร็จ');
+                    
+                    if (!liff.isInClient()) {
+                        showDebug('⚠️ กรุณาเปิดในแอพ LINE');
+                        showMessage('error', '⚠️ กรุณาเปิดในแอพ LINE เพื่อใช้งาน');
+                        return;
+                    }
+                    
+                    isLiffReady = true;
+                    showDebug('✅ เปิดใน LINE App แล้ว');
+                    
+                    const profile = await liff.getProfile();
+                    userProfile = profile;
+                    document.getElementById('userInfo').style.display = 'flex';
+                    document.getElementById('userName').textContent = profile.displayName;
+                    document.getElementById('userPicture').src = profile.pictureUrl;
+                    showDebug(`✅ โหลดโปรไฟล์: ${profile.displayName}`);
+                    
+                } catch (error) {
+                    console.error('LIFF Error:', error);
+                    showDebug(`❌ LIFF Error: ${error.message}`);
+                    showMessage('error', '❌ เกิดข้อผิดพลาดในการเชื่อมต่อ LINE');
+                }
+            });
+            
+            document.getElementById('swapBtn').addEventListener('click', () => {
+                const from = document.getElementById('from');
+                const to = document.getElementById('to');
+                [from.value, to.value] = [to.value, from.value];
+                clearError('fromGroup');
+                clearError('toGroup');
+            });
+            
+            document.getElementById('submitBtn').addEventListener('click', async () => {
+                ['fromGroup', 'toGroup', 'departGroup', 'returnGroup', 'phoneGroup'].forEach(clearError);
                 
-                const profile = await liff.getProfile();
-                userProfile = profile;
-                document.getElementById('userInfo').style.display = 'flex';
-                document.getElementById('userName').textContent = profile.displayName;
-                document.getElementById('userPicture').src = profile.pictureUrl;
-                showDebug(`✅ โหลดโปรไฟล์: ${profile.displayName}`);
+                const tripType = document.querySelector('input[name="trip"]:checked').value;
+                const from = document.getElementById('from').value.trim();
+                const to = document.getElementById('to').value.trim();
+                const departDateValue = departPicker.value;
+                const returnDateValue = returnPicker.value;
+                const phone = document.getElementById('phone').value.trim();
+                const seatClass = document.getElementById('seatClass').value;
+                const specialRequest = document.getElementById('specialRequest').value.trim();
+                const passengers = parseInt(document.getElementById('passenger-count').value) || 1;
                 
-            } catch (error) {
-                console.error('LIFF Error:', error);
-                showDebug(`❌ LIFF Error: ${error.message}`);
-                showMessage('error', '❌ เกิดข้อผิดพลาดในการเชื่อมต่อ LINE');
-            }
-        });
-        
-        document.getElementById('swapBtn').addEventListener('click', () => {
-            const from = document.getElementById('from');
-            const to = document.getElementById('to');
-            [from.value, to.value] = [to.value, from.value];
-            clearError('fromGroup');
-            clearError('toGroup');
-        });
-        
-        document.getElementById('submitBtn').addEventListener('click', async () => {
-            ['fromGroup', 'toGroup', 'departGroup', 'returnGroup', 'phoneGroup'].forEach(clearError);
-            
-            const tripType = document.querySelector('input[name="trip"]:checked').value;
-            const from = document.getElementById('from').value.trim();
-            const to = document.getElementById('to').value.trim();
-            const departDateValue = departPicker.value;
-            const returnDateValue = returnPicker.value;
-            const phone = document.getElementById('phone').value.trim();
-            const seatClass = document.getElementById('seatClass').value;
-            const specialRequest = document.getElementById('specialRequest').value.trim();
-            const passengers = parseInt(document.getElementById('passenger-count').value) || 1;
-            
-            let hasError = false;
-            
-            if (!from) {
-                showError('fromGroup', 'กรุณาเลือกสถานีต้นทาง');
-                hasError = true;
-            }
-            
-            if (!to) {
-                showError('toGroup', 'กรุณาเลือกสถานีปลายทาง');
-                hasError = true;
-            }
-            
-            if (from && to && from === to) {
-                showError('toGroup', 'สถานีต้นทางและปลายทางต้องไม่เหมือนกัน');
-                hasError = true;
-            }
-            
-            if (!departDateValue) {
-                showError('departGroup', 'กรุณาเลือกวันที่เดินทางไป');
-                hasError = true;
-            }
-            
-            if (tripType === 'ไป-กลับ') {
-                if (!returnDateValue) {
-                    showError('returnGroup', 'กรุณาเลือกวันที่เดินทางกลับ');
-                    hasError = true;
-                } else if (returnDateValue <= departDateValue) {
-                    showError('returnGroup', 'วันที่กลับต้องหลังวันที่ไป');
+                let hasError = false;
+                
+                if (!from) {
+                    showError('fromGroup', 'กรุณาเลือกสถานีต้นทาง');
                     hasError = true;
                 }
-            }
-            
-            if (phone && !validatePhone(phone)) {
-                showError('phoneGroup', 'เบอร์โทรศัพท์ไม่ถูกต้อง (ต้องขึ้นต้นด้วย 0 และมี 9-10 หลัก)');
-                hasError = true;
-            }
-            
-            if (hasError) {
-                showMessage('error', '⚠️ กรุณาตรวจสอบข้อมูลที่กรอก');
-                return;
-            }
-            
-            if (!isLiffReady || !userProfile) {
-                showMessage('error', '❌ ระบบยังไม่พร้อม กรุณารอสักครู่หรือรีเฟรชหน้าเว็บ');
-                return;
-            }
-            
-            const departDate = formatDateThai(departDateValue);
-            const returnDate = returnDateValue ? formatDateThai(returnDateValue) : '-';
-            
-            const reqNum = `TRAIN${Date.now().toString().slice(-6)}${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
-            
-            const bookingData = {
-                requestNumber: reqNum,
-                tripType,
-                from,
-                to,
-                departDate: departDate,
-                departDateRaw: departDateValue,
-                returnDate: tripType === 'ไป-กลับ' ? returnDate : '-',
-                returnDateRaw: tripType === 'ไป-กลับ' ? returnDateValue : '',
-                passengers,
-                seatClass,
-                phone: phone || 'ไม่ระบุ',
-                specialRequest: specialRequest || 'ไม่มี',
-                userId: userProfile.userId,
-                userName: userProfile.displayName,
-                timestamp: new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })
-            };
-            
-            showLoading(true);
-            showDebug('กำลังส่งข้อมูล...');
-            
-            try {
-                showDebug('กำลังส่งข้อมูลไป Google Sheets...');
-                await fetch(CONFIG.GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bookingData)
-                });
                 
-                showDebug('✅ ส่งข้อมูลไป Google Sheets สำเร็จ');
+                if (!to) {
+                    showError('toGroup', 'กรุณาเลือกสถานีปลายทาง');
+                    hasError = true;
+                }
+                
+                if (from && to && from === to) {
+                    showError('toGroup', 'สถานีต้นทางและปลายทางต้องไม่เหมือนกัน');
+                    hasError = true;
+                }
+                
+                if (!departDateValue) {
+                    showError('departGroup', 'กรุณาเลือกวันที่เดินทางไป');
+                    hasError = true;
+                }
+                
+                if (tripType === 'ไป-กลับ') {
+                    if (!returnDateValue) {
+                        showError('returnGroup', 'กรุณาเลือกวันที่เดินทางกลับ');
+                        hasError = true;
+                    } else if (returnDateValue <= departDateValue) {
+                        showError('returnGroup', 'วันที่กลับต้องหลังวันที่ไป');
+                        hasError = true;
+                    }
+                }
+                
+                if (!validatePhone(phone)) {
+                    if (!phone) {
+                        showError('phoneGroup', 'กรุณากรอกเบอร์โทรศัพท์');
+                    } else {
+                        showError('phoneGroup', 'เบอร์โทรศัพท์ไม่ถูกต้อง (ต้องขึ้นต้นด้วย 0 และมี 9-10 หลัก)');
+                    }
+                    hasError = true;
+                }
+                
+                if (hasError) {
+                    showMessage('error', '⚠️ กรุณาตรวจสอบข้อมูลที่กรอก');
+                    return;
+                }
+                
+                if (!isLiffReady || !userProfile) {
+                    showMessage('error', '❌ ระบบยังไม่พร้อม กรุณารอสักครู่หรือรีเฟรชหน้าเว็บ');
+                    return;
+                }
+                
+                const departDate = formatDateThai(departDateValue);
+                const returnDate = returnDateValue ? formatDateThai(returnDateValue) : '-';
+                
+                const reqNum = `TRAIN${Date.now().toString().slice(-6)}${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+                
+                showLoading(true);
+                showDebug('กำลังส่งข้อมูล...');
                 
                 try {
                     showDebug('กำลังส่งข้อความไปยัง LINE Chat...');
@@ -570,9 +613,7 @@
                     
                     msg += `\n\n🎫 ประเภทที่นั่ง: ${seatClass}`;
                     
-                    if (phone && phone !== 'ไม่ระบุ') {
-                        msg += `\n\n📞 เบอร์โทรศัพท์: ${phone}`;
-                    }
+                    msg += `\n\n📞 เบอร์โทรศัพท์: ${phone}`;
                     
                     if (specialRequest && specialRequest !== 'ไม่มี') {
                         msg += `\n\n📝 รายละเอียดเพิ่มเติม:\n${specialRequest}`;
@@ -594,20 +635,14 @@
                         }
                     }, 2000);
                     
-                } catch (lineError) {
-                    console.error('LINE Error:', lineError);
-                    showDebug(`⚠️ LINE Error: ${lineError.message}`);
-                    showMessage('success', `✅ บันทึกข้อมูลสำเร็จ! หมายเลข: ${reqNum}`);
+                } catch (error) {
+                    console.error('LINE Error:', error);
+                    showDebug(`⚠️ LINE Error: ${error.message}`);
+                    showMessage('error', '❌ เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง');
+                } finally {
+                    showLoading(false);
                 }
-                
-            } catch (error) {
-                console.error('Submit Error:', error);
-                showDebug(`❌ Error: ${error.message}`);
-                showMessage('error', '❌ เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง');
-            } finally {
-                showLoading(false);
-            }
-        });
-    </script>
-</body>
-</html>
+            });
+        </script>
+        </body>
+        </html>
