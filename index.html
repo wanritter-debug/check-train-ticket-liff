@@ -495,27 +495,34 @@
                     showDebug('✅ LIFF เริ่มต้นสำเร็จ');
                     
                     if (!liff.isInClient()) {
-                        showDebug('⚠️ กรุณาเปิดในแอพ LINE');
-                        showMessage('error', '⚠️ กรุณาเปิดในแอพ LINE เพื่อใช้งาน');
-                        return;
+                        showDebug('⚠️ เปิดนอก LINE App - ใช้งานแบบ Standalone');
+                        isLiffReady = false;
+                        userProfile = { 
+                            userId: 'web_' + Date.now(), 
+                            displayName: 'ผู้ใช้ผ่าน Web' 
+                        };
+                    } else {
+                        isLiffReady = true;
+                        showDebug('✅ เปิดใน LINE App แล้ว');
+                        
+                        const profile = await liff.getProfile();
+                        userProfile = profile;
+                        document.getElementById('userInfo').style.display = 'flex';
+                        document.getElementById('userName').textContent = profile.displayName;
+                        document.getElementById('userPicture').src = profile.pictureUrl;
+                        showDebug(`✅ โหลดโปรไฟล์: ${profile.displayName}`);
                     }
-                    
-                    isLiffReady = true;
-                    showDebug('✅ เปิดใน LINE App แล้ว');
-                    
-                    const profile = await liff.getProfile();
-                    userProfile = profile;
-                    document.getElementById('userInfo').style.display = 'flex';
-                    document.getElementById('userName').textContent = profile.displayName;
-                    document.getElementById('userPicture').src = profile.pictureUrl;
-                    showDebug(`✅ โหลดโปรไฟล์: ${profile.displayName}`);
                     
                 } catch (error) {
                     console.error('LIFF Error:', error);
                     showDebug(`❌ LIFF Error: ${error.message}`);
-                    showMessage('error', '❌ เกิดข้อผิดพลาดในการเชื่อมต่อ LINE');
-                }
-            });
+                    isLiffReady = false;
+                    userProfile = { 
+                        userId: 'web_' + Date.now(), 
+                        displayName: 'ผู้ใช้ผ่าน Web' 
+                    };
+                } 
+                });
             
             document.getElementById('swapBtn').addEventListener('click', () => {
                 const from = document.getElementById('from');
@@ -584,7 +591,7 @@
                     return;
                 }
                 
-                if (!isLiffReady || !userProfile) {
+                if (!userProfile) {
                     showMessage('error', '❌ ระบบยังไม่พร้อม กรุณารอสักครู่หรือรีเฟรชหน้าเว็บ');
                     return;
                 }
@@ -639,10 +646,51 @@
                     console.error('LINE Error:', error);
                     showDebug(`⚠️ LINE Error: ${error.message}`);
                     showMessage('error', '❌ เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง');
+                    showMessagePopup(msg, reqNum);  // ← เพิ่มบรรทัดนี้
                 } finally {
                     showLoading(false);
                 }
-            });
-        </script>
+            });  // ← ปิด event listener ของปุ่ม submit
+
+            // ✅ เพิ่มฟังก์ชันเหล่านี้
+            function showMessagePopup(message, reqNum) {
+                const popup = document.createElement('div');
+                popup.className = 'message-popup active';
+                popup.innerHTML = `
+                    <div class="message-box">
+                        <div class="message-header">
+                            <h3>✅ บันทึกข้อมูลสำเร็จ!</h3>
+                            <p style="font-size: 14px; margin-top: 5px;">หมายเลข: ${reqNum}</p>
+                            <p style="font-size: 13px; margin-top: 10px; opacity: 0.9;">กรุณาคัดลอกข้อความด้านล่างและส่งใน LINE Chat</p>
+                        </div>
+                        <div class="message-content">${message}</div>
+                        <div class="message-buttons">
+                            <button class="copy-btn" onclick="copyMessage(this)">📋 คัดลอกข้อความ</button>
+                            <button class="close-btn" onclick="closePopup()">ปิด</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(popup);
+                popup.messageText = message;
+            }
+            
+            function copyMessage(btn) {
+                const popup = btn.closest('.message-popup');
+                const message = popup.messageText;
+                
+                navigator.clipboard.writeText(message).then(() => {
+                    btn.textContent = '✅ คัดลอกแล้ว!';
+                    btn.style.background = '#4caf50';
+                    showMessage('success', '✅ คัดลอกข้อความแล้ว!');
+                }).catch(() => {
+                    alert('กรุณาคัดลอกข้อความด้วยตนเอง');
+                });
+            }
+            
+            function closePopup() {
+                const popup = document.querySelector('.message-popup');
+                if (popup) popup.remove();
+            }
+            </script>
         </body>
         </html>
